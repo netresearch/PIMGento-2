@@ -1,6 +1,6 @@
 <?php
 
-namespace Pimgento\Demo\Observer;
+namespace Pimgento\Channel\Observer;
 
 use Magento\Framework\Event\ObserverInterface;
 use Pimgento\Import\Observer\AbstractAddImportObserver;
@@ -14,7 +14,7 @@ class AddPimgentoImportObserver extends AbstractAddImportObserver implements Obs
      */
     protected function getImportCode()
     {
-        return 'demo';
+        return 'channel';
     }
 
     /**
@@ -24,7 +24,7 @@ class AddPimgentoImportObserver extends AbstractAddImportObserver implements Obs
      */
     protected function getImportName()
     {
-        return __('Demo');
+        return __('Channel');
     }
 
     /**
@@ -34,7 +34,7 @@ class AddPimgentoImportObserver extends AbstractAddImportObserver implements Obs
      */
     protected function getImportDefaultClassname()
     {
-        return '\Pimgento\Demo\Model\Factory\Import';
+        return '\Pimgento\Channel\Model\Factory\Import';
     }
 
     /**
@@ -48,16 +48,6 @@ class AddPimgentoImportObserver extends AbstractAddImportObserver implements Obs
     }
 
     /**
-     * Is a file is required for thie import
-     *
-     * @return bool
-     */
-    protected function isImportFileRequired()
-    {
-        return false;
-    }
-
-    /**
      * get the steps definition
      *
      * @return array
@@ -66,27 +56,27 @@ class AddPimgentoImportObserver extends AbstractAddImportObserver implements Obs
     {
         $stepsBefore = array(
             array(
-                'comment' => __('First step'),
-                'method'  => 'firstStep',
+                'comment' => __('Create temporary table'),
+                'method'  => 'createTable',
             ),
             array(
-                'comment' => __('Second step'),
-                'method'  => 'secondStep',
+                'comment' => __('Fill temporary table'),
+                'method'  => 'insertData',
             ),
             array(
-                'comment' => __('Third step'),
-                'method'  => 'thirdStep',
+                'comment' => __('Create Website, store and store view'),
+                'method'  => 'createWebsite',
             ),
-            array(
-                'comment' => __('Fourth step'),
-                'method'  => 'fourthStep',
-            )
         );
 
         $stepsAfter = array(
             array(
-                'comment' => __('Clean step'),
-                'method'  => 'cleanStep',
+                'comment' => __('Drop temporary table'),
+                'method'  => 'dropTable',
+            ),
+            array(
+                'comment' => __('Clean cache'),
+                'method'  => 'cleanCache',
             )
         );
 

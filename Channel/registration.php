@@ -2,6 +2,6 @@
 
 \Magento\Framework\Component\ComponentRegistrar::register(
     \Magento\Framework\Component\ComponentRegistrar::MODULE,
-    'Pimgento_Demo',
+    'Pimgento_Channel',
     __DIR__
 );

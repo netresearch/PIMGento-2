@@ -6,7 +6,7 @@
                 <resource id="Magento_Backend::system">
                     <resource id="Pimgento_Import::pimgento">
                         <resource id="Pimgento_Import::pimgento_import">
-                            <resource id="Pimgento_Import::pimgento_import_demo" title="Demo" sortOrder="0" />
+                            <resource id="Pimgento_Import::pimgento_import_channel" title="Channel" sortOrder="0" />
                         </resource>
                     </resource>
                 </resource>
