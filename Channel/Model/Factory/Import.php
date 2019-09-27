@@ -145,6 +145,7 @@ class Import extends Factory
             }
 
             $code = $row['tree'];
+            $currencies = $row['currencies'];
             $category = $this->checkCategoryExists($code);
             if (!$category->getId()) {
                 $rootCategoryId = $this->createCategory($code);
@@ -193,8 +194,9 @@ class Import extends Factory
             if( !empty($languages)) {
                 $pos=0;
                 foreach ($languages as $key=>$lang) {
+                    $store_code = strtolower($row['code']).'_'.$lang;
                     $store_values = array(
-                        'code' => strtolower($row['code']).'_'.$lang,
+                        'code' => $store_code,
                         'website_id' => $websiteLastInsertId,
                         'group_id' => $groupLastInsertId,
                         'name' => $row['label-' . $lang].' '.$lang,
@@ -202,12 +204,26 @@ class Import extends Factory
                         'is_active' => 1,
                     );
                     $connection->insertOnDuplicate(
-                    $resource->getTable('store'), $store_values, array()
+                         $resource->getTable('store'), $store_values, array()
                     );
-                    $storeLastInsertId = $connection->lastInsertId($resource->getTable('store'));
+                    $storeId = $connection->lastInsertId($resource->getTable('store'));
+                    if (empty($storeId) || $storeId == 0) {
+                        $storeId = $connection->fetchOne(
+                            $connection->select()
+                                ->from($resource->getTable('store'))
+                                ->where('code = ?', $store_code)
+                                ->limit(1)
+                        );
+                    }
 
                     //Update store locales
-                    $this->updateStoreLocales($storeLastInsertId, $lang);
+                    $this->updateStoreLocales($storeId, $lang);
+
+                    //set default currency
+                    $this->currencyDefault($storeId, $currencies);
+
+                    //set currencies
+                    $this->allowedCurrencyCodes($storeId, $currencies);
                 }
 
                 $this->setMessage(
@@ -222,7 +238,7 @@ class Import extends Factory
      */
     public function checkCategoryExists($code)
     {
-        return $this->category->getCollection()->addAttributeToFilter('name',$code)->getFirstItem();;
+        return $this->category->getCollection()->addAttributeToFilter('name',$code)->getFirstItem();
     }
 
     /**
@@ -279,6 +295,49 @@ class Import extends Factory
     }
 
     /**
+     * Default currency codes
+     */
+    public function currencyDefault($storeId, $currencies)
+    {
+        $resource = $this->_entities->getResource();
+        $connection = $resource->getConnection();
+
+        if( !empty($storeId) && !empty($currencies)) {
+            $currency = explode(',', $currencies);
+            $values = array(
+                'scope' => self::CONFIG_GENERAL_SCOPE_CODE,
+                'scope_id' => $storeId,
+                'path' => \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_DEFAULT,
+                'value' => $currency[0]
+            );
+            $connection->insertOnDuplicate(
+                $resource->getTable('core_config_data'), $values, array()
+            );
+        }
+    }
+
+    /**
+     * Allow currency codes
+     */
+    public function allowedCurrencyCodes($storeId, $currencies)
+    {
+        $resource = $this->_entities->getResource();
+        $connection = $resource->getConnection();
+
+        if( !empty($storeId) && !empty($currencies)) {
+            $values = array(
+                'scope' => self::CONFIG_GENERAL_SCOPE_CODE,
+                'scope_id' => $storeId,
+                'path' => \Magento\Directory\Model\Currency::XML_PATH_CURRENCY_ALLOW,
+                'value' => $currencies
+            );
+            $connection->insertOnDuplicate(
+                $resource->getTable('core_config_data'), $values, array()
+            );
+        }
+    }
+
+    /**
      * Update store locales
      */
     public function updateStoreLocales($storeId, $locale)
@@ -296,10 +355,6 @@ class Import extends Factory
 
             $connection->insertOnDuplicate(
                 $resource->getTable('core_config_data'), $values, array()
-            );
-
-            $this->setMessage(
-                __('Update locales for all store views')
             );
         }
     }
